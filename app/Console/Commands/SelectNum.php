@@ -56,17 +56,19 @@ class SelectNum extends Command
 
         $noticeUrl = "https://oapi.dingtalk.com/robot/send?access_token=d4d17f2fb8f0e6f6798cbc744f39157b38b39177c5416c5f4641786091269b57";
 
-        $box = ['135', '136', '137', '138', '139', '158', '187', '188'];
-        $all = [];
+        $box  = ['135', '136', '137', '138', '139', '158', '187', '188'];
+        $all  = [];
+        $sort = [];
         foreach ($box as $pre) {
-            for ($i = 1; $i <= 10; $i++) {
+            for ($i = 1; $i <= 100; $i++) {
                 $res       = $this->_get($pre, $i);
                 $all[$pre] = array_merge($res, $all[$pre] ?? []);
                 if (count($res) < 10) {
                     asort($all[$pre]);
+                    $sort[$pre] = array_values($all[$pre]);
                     if (!Cache::has("list-" . $pre) || count(json_decode(Cache::get("list-" . $pre),
                             true)) != count($all[$pre])) {
-                        Cache::put("list-" . $pre, json_encode($all[$pre], JSON_UNESCAPED_UNICODE), 60 * 60 * 6);
+                        Cache::put("list-" . $pre, json_encode($all[$pre], JSON_UNESCAPED_UNICODE), 60 * 60 * 13);
 
                         $requestData = [
                             'msgtype' => 'text',
@@ -87,34 +89,16 @@ class SelectNum extends Command
                 }
             }
         }
-//        var_dump($all);
 
-//        var_dump(json_decode(Cache::get("list-188")));
-//        file_put_contents('/Users/wenba/www/nmg/number.txt', "=====" . date("Y-m-d H:i:s") . "=====");
         file_put_contents('/Users/wenba/www/nmg/number.txt',
-            "=====" . date("Y-m-d H:i:s") . "=====\n" . json_encode($all, JSON_UNESCAPED_UNICODE), FILE_APPEND);
+            "\n=====" . date("Y-m-d H:i:s") . "=====\n" . json_encode($sort,
+                JSON_FORCE_OBJECT | JSON_UNESCAPED_UNICODE), FILE_APPEND);
     }
 
     public function _get($pre, $num)
     {
         $array = file_get_contents('http://eshop.nm135.cn/eshop/wap/onlineCardNew/searchnumber.do?cityId=71000130&segment=' . $pre . '&pageNo=' . $num);
-//        $array = '
-//
-//<ul class="number-list">
-//        <li class="curr">13848117520</li>
-//        <li >13847179520</li>
-//        <li >13848129520</li>
-//        <li >13848123520</li>
-//        <li >13848168520</li>
-//        <li >13848515520</li>
-//        <li >13848158520</li>
-//        <li >13847162520</li>
-//        <li >13848120520</li>
-//        <li >13848142520</li>
-//
-//</ul>
-//
-//';
+
         preg_match_all('/<li *>(.*?)<\/li>/', str_replace('class="curr"', '', $array), $new);
         return $new[1];
     }
